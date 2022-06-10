@@ -5,4 +5,4 @@ Calculate spectral element method shape functions with arbitrary order for use a
 
 Lagrange Polynomials with uniform and Lobatto node distribution, Bernstein Polynomials
 
-for increased readability as .txt, copy-paste code in .nb Notebook!
+For increased readability as text in .nb file! Copy-paste code in .nb file to acutal MATHEMATICA Notebook!
