@@ -1,0 +1,362 @@
+(* =====================================================================================\
+ *)
+(* Lagrange Polynomials with uniform node distribution *)
+(*
+m = order of shape functions,
+n = index of shape function, n = 1...m+1, 
+def = Definition interval, "m1p1" = -1...+1, "0p1" = 0...+1
+*)
+
+(* -------------------------------------------------------------------------------------\
+ *)
+(* Uncompiled: calculates all 1D and 2D shape functions and their \
+derivatives for all indices for a given order m as copy-paste ready \
+function *)
+calcphiLaEDUC[m_, def_] :=
+ Block[{xi, xi1, xi2, i, j, f, philed, philgraded, phiqxed, phiqyed, 
+   phiqed, phiqgraded, k},
+  
+  Table[xi[i] = Subdivide[-1, 1, m][[i]], {i, 1, m + 1}];
+  
+  Which[
+   def == "m1p1",
+   Null,
+   def == "0p1",
+   Table[xi[i] = (1 + xi[i])/2, {i, 1, m + 1}];
+   ];
+  
+  For[j = 1, j <= m + 1, j++,
+   For[i = 1, i <= m + 1, i++,
+    If[i != j, f[i] = (xi - xi[i])/(xi[j] - xi[i]), f[i] = 1];
+    ];
+   philed[m, j] = Product[f[i], {i, 1, m + 1}];
+   ];
+  
+  Table[philgraded[m, j] = D[philed[m, j], xi], {j, 1, m + 1}];
+  
+  (* 1D \[Rule] 2D *)
+  Table[phiqxed[i] = (philed[m, i] /. xi -> xi1), {i, 1, m + 1}];
+  Table[phiqyed[i] = (philed[m, i] /. xi -> xi2), {i, 1, m + 1}];
+  
+  (* calculate shape functions *)
+  k = 1;
+  Table[phiqed [m, k] = (phiqxed[i]*phiqyed[j]); 
+   k++;, {j, 1, m + 1}, {i, 1, m + 1}];
+  Table[phiqgraded[m, i] = Grad[phiqed[m, i], {xi1, xi2}];, {i, 
+    1, (m + 1)^2}];
+  
+  Table[Print["philequdistuc[", m, ",", k, "][xi_]:=", philed[m, k], 
+    ";"], {k, 1, (m + 1)}];
+  Table[Print["philequdistgraduc[", m, ",", k, "][xi_]:=", 
+    philgraded[m, k], ";"], {k, 1, (m + 1)}];
+  Table[Print["phiqequdistuc[", m, ",", k, "][xi1_,xi2_]:=", 
+    phiqed[m, k], ";"], {k, 1, (m + 1)^2}];
+  Table[Print["phiqequdistgraduc[", m, ",", k, "][xi1_,xi2_]:=", 
+    phiqgraded[m, k], ";"], {k, 1, (m + 1)^2}];
+  ]
+(* -------------------------------------------------------------------------------------\
+ *)
+
+(* -------------------------------------------------------------------------------------\
+ *)
+(* Compiled: calculates all 1D and 2D shape functions and their \
+derivatives for all indices for a given order m as copy-paste ready \
+function *)
+calcphiLaEDCOMP[m_, def_] :=
+ Block[{xi, xi1, xi2, i, j, f, philed, philgraded, phiqxed, phiqyed, 
+   phiqed, phiqgraded, k},
+  
+  Table[xi[i] = Subdivide[-1, 1, m][[i]], {i, 1, m + 1}];
+  
+  Which[
+   def == "m1p1",
+   Null,
+   def == "0p1",
+   Table[xi[i] = (1 + xi[i])/2, {i, 1, m + 1}];
+   ];
+  
+  For[j = 1, j <= m + 1, j++,
+   For[i = 1, i <= m + 1, i++,
+    If[i != j, f[i] = (xi - xi[i])/(xi[j] - xi[i]), f[i] = 1];
+    ];
+   philed[m, j] = Product[f[i], {i, 1, m + 1}];
+   ];
+  
+  Table[philgraded[m, j] = D[philed[m, j], xi], {j, 1, m + 1}];
+  
+  (* 1D \[Rule] 2D *)
+  Table[phiqxed[i] = (philed[m, i] /. xi -> xi1), {i, 1, m + 1}];
+  Table[phiqyed[i] = (philed[m, i] /. xi -> xi2), {i, 1, m + 1}];
+  
+  (* calculate shape functions *)
+  k = 1;
+  Table[phiqed [m, k] = (phiqxed[i]*phiqyed[j]); 
+   k++;, {j, 1, m + 1}, {i, 1, m + 1}];
+  Table[phiqgraded[m, i] = Grad[phiqed[m, i], {xi1, xi2}];, {i, 
+    1, (m + 1)^2}];
+  
+  Table[Print["philequdist[", m, ",", k, "]=Compile[{xi},Evaluate[N[",
+     philed[m, k], 
+    ",MachinePrecision]],\"RuntimeOptions\"\[Rule]{\"\
+EvaluateSymbolically\"\[Rule]False}];"], {k, 1, (m + 1)}];
+  Table[Print["philequdistgrad[", m, ",", k, 
+    "]=Compile[{xi},Evaluate[N[", philgraded[m, k], 
+    ",MachinePrecision]],\"RuntimeOptions\"\[Rule]{\"\
+EvaluateSymbolically\"\[Rule]False}];"], {k, 1, (m + 1)}];
+  Table[Print["phiqequdist[", m, ",", k, 
+    "]=Compile[{xi1,xi2},Evaluate[N[", phiqed[m, k], 
+    ",MachinePrecision]],\"RuntimeOptions\"\[Rule]{\"\
+EvaluateSymbolically\"\[Rule]False}];"], {k, 1, (m + 1)^2}];
+  Table[Print["phiqequdistgrad[", m, ",", k, 
+    "]=Compile[{xi1,xi2},Evaluate[N[", phiqgraded[m, k], 
+    ",MachinePrecision]],\"RuntimeOptions\"\[Rule]{\"\
+EvaluateSymbolically\"\[Rule]False}];"], {k, 1, (m + 1)^2}];
+  ]
+(* -------------------------------------------------------------------------------------\
+ *)
+(* =====================================================================================\
+ *)
+
+(* =====================================================================================\
+ *)
+(* Lagrange Polynomials with Lobatto node distribution *)
+(*
+m = order of shape functions,
+n = index of shape function, n = 1...m+1, 
+def = Definition interval, "m1p1" = -1...+1, "0p1" = 0...+1,
+acc = Accuracy of calculation
+*)
+
+(* -------------------------------------------------------------------------------------\
+ *)
+(* Uncompiled: calculates all 1D and 2D shape functions and their \
+derivatives for all indices for a given order m as copy-paste ready \
+function *)
+calcphiLaLOBUC[m_, def_, acc_] :=
+ Block[{$MaxPrecision = acc, $MinPrecision = acc, calcrange1d, 
+   calcrange2d, solsort, phillob, philgradlob, phiqxlob, phiqylob, 
+   xi1, xi2, phiqlob, phiqgradlob},
+  
+  (* Calculate zeros of Legendre *)
+  Block[{mlobatto, sol, len, i, x, xh},
+   LobattoP[n_, x_] := D[LegendreP[n + 1, x], x];
+   mlobatto = m - 1;
+   sol = Solve[LobattoP[mlobatto, x] == 0, x];
+   sol = {-1}~Join~sol[[;; , 1, 2]]~Join~{1};
+   solsort = Re@SortBy[sol, N];
+   Table[xi[i] = N[solsort[[i]], acc], {i, 1, m + 1}];
+   ];
+  
+  Which[
+   def == "m1p1",
+   Null,
+   def == "0p1",
+   Table[xi[i] = (1 + xi[i])/2, {i, 1, m + 1}];
+   ];
+  
+  Block[{f, phiqx, phiqy, k},
+   For[j = 1, j <= m + 1, j++,
+    For[i = 1, i <= m + 1, i++,
+     If[i != j, f[i] = (xi - xi[i])/(xi[j] - xi[i]), f[i] = 1];
+     ];
+    phillob[m, j] = Product[f[i], {i, 1, m + 1}];
+    ];
+   Table[philgradlob[m, j] = D[phillob[m, j], xi], {j, 1, m + 1}];
+   
+   (* 1D \[Rule] 2D *)
+   Table[phiqxlob[i] = (phillob[m, i] /. xi -> xi1), {i, 1, m + 1}];
+   Table[phiqylob[i] = (phillob[m, i] /. xi -> xi2), {i, 1, m + 1}];
+   
+   (* calculate shape functions *)
+   k = 1;
+   Table[phiqlob [m, k] = (phiqxlob[i]*phiqylob[j]); 
+    k++;, {j, 1, m + 1}, {i, 1, m + 1}];
+   Table[phiqgradlob[m, i] = Grad[phiqlob[m, i], {xi1, xi2}];, {i, 
+     1, (m + 1)^2}];
+   ];
+  
+  Table[Print["phillobattouc[", m, ",", k, "][xi_]:=", phillob[m, k], 
+    ";"], {k, 1, (m + 1)}];
+  Table[Print["phillobattograduc[", m, ",", k, "][xi_]:=", 
+    philgradlob[m, k], ";"], {k, 1, (m + 1)}];
+  Table[Print["phiqlobattouc[", m, ",", k, "][xi1_,xi2_]:=", 
+    phiqlob[m, k], ";"], {k, 1, (m + 1)^2}];
+  Table[Print["phiqlobattograduc[", m, ",", k, "][xi1_,xi2_]:=", 
+    phiqgradlob[m, k], ";"], {k, 1, (m + 1)^2}];
+  ]
+(* -------------------------------------------------------------------------------------\
+ *)
+
+(* -------------------------------------------------------------------------------------\
+ *)
+(* Compiled: calculates all 1D and 2D shape functions and their \
+derivatives for all indices for a given order m as copy-paste ready \
+function *)
+calcphiLaLOBCOMP[m_, def_, acc_] :=
+ Block[{$MaxPrecision = acc, $MinPrecision = acc, calcrange1d, 
+   calcrange2d, solsort, phillob, philgradlob, phiqxlob, phiqylob, 
+   xi1, xi2, phiqlob, phiqgradlob},
+  
+  (* Calculate zeros of Legendre *)
+  Block[{mlobatto, sol, len, i, x, xh},
+   LobattoP[n_, x_] := D[LegendreP[n + 1, x], x];
+   mlobatto = m - 1;
+   sol = Solve[LobattoP[mlobatto, x] == 0, x];
+   sol = {-1}~Join~sol[[;; , 1, 2]]~Join~{1};
+   solsort = Re@SortBy[sol, N];
+   Table[xi[i] = N[solsort[[i]], acc], {i, 1, m + 1}];
+   ];
+  
+  Which[
+   def == "m1p1",
+   Null,
+   def == "0p1",
+   Table[xi[i] = (1 + xi[i])/2, {i, 1, m + 1}];
+   ];
+  
+  Block[{f, phiqx, phiqy, k},
+   For[j = 1, j <= m + 1, j++,
+    For[i = 1, i <= m + 1, i++,
+     If[i != j, f[i] = (xi - xi[i])/(xi[j] - xi[i]), f[i] = 1];
+     ];
+    phillob[m, j] = Product[f[i], {i, 1, m + 1}];
+    ];
+   Table[philgradlob[m, j] = D[phillob[m, j], xi], {j, 1, m + 1}];
+   
+   (* 1D \[Rule] 2D *)
+   Table[phiqxlob[i] = (phillob[m, i] /. xi -> xi1), {i, 1, m + 1}];
+   Table[phiqylob[i] = (phillob[m, i] /. xi -> xi2), {i, 1, m + 1}];
+   
+   (* calculate shape functions *)
+   k = 1;
+   Table[phiqlob [m, k] = (phiqxlob[i]*phiqylob[j]); 
+    k++;, {j, 1, m + 1}, {i, 1, m + 1}];
+   Table[phiqgradlob[m, i] = Grad[phiqlob[m, i], {xi1, xi2}];, {i, 
+     1, (m + 1)^2}];
+   ];
+  
+  Table[Print["phillobatto[", m, ",", k, "]=Compile[{xi},Evaluate[N[",
+     NumberForm[N[phillob[m, k], acc], 32], 
+    ",MachinePrecision]],\"RuntimeOptions\"\[Rule]{\"\
+EvaluateSymbolically\"\[Rule]False}];"], {k, 1, (m + 1)}];
+  Table[Print["phillobattograd[", m, ",", k, 
+    "]=Compile[{xi},Evaluate[N[", 
+    NumberForm[N[philgradlob[m, k], acc], 32], 
+    ",MachinePrecision]],\"RuntimeOptions\"\[Rule]{\"\
+EvaluateSymbolically\"\[Rule]False}];"], {k, 1, (m + 1)}];
+  Table[Print["phiqlobatto[", m, ",", k, 
+    "]=Compile[{xi1,xi2},Evaluate[N[", 
+    NumberForm[N[phiqlob[m, k], acc], 32], 
+    ",MachinePrecision]],\"RuntimeOptions\"\[Rule]{\"\
+EvaluateSymbolically\"\[Rule]False}];"], {k, 1, (m + 1)^2}];
+  Table[Print["phiqlobattograd[", m, ",", k, 
+    "]=Compile[{xi1,xi2},Evaluate[N[", 
+    NumberForm[N[phiqgradlob[m, k], acc], 32], 
+    ",MachinePrecision]],\"RuntimeOptions\"\[Rule]{\"\
+EvaluateSymbolically\"\[Rule]False}];"], {k, 1, (m + 1)^2}];
+  ]
+(* -------------------------------------------------------------------------------------\
+ *)
+(* =====================================================================================\
+ *)
+
+(* =====================================================================================\
+ *)
+(* Bernstein Polynomials *)
+bernstein[m_, n_, xi_] := 
+  Binomial[m, (n - 1)]*xi^(n - 1)*(1 - xi)^(m - (n - 1));
+(* 
+Bernstein shape functions and their derivatives, not compiled for \
+testing purposes,
+m = order of shape functions,
+n = index of shape function n = 1...m+1,
+xi = arbitrary name for variable
+*)
+
+(* -------------------------------------------------------------------------------------\
+ *)
+(* Uncompiled: calculates all 1D and 2D shape functions and their \
+derivatives for all indices for a given order m as copy-paste ready \
+function *)
+calcphiBernsteinUC[m_] :=
+  Block[{k, philbernstein, philgradbernstein, phiqxbernstein, 
+    phiqybernstein, xi, xi1, xi2, phiqbernstein, phiqgradbernstein},
+   
+   Table[philbernstein[m, i] = bernstein[m, i, xi], {i, 1, m + 1}];
+   Table[philgradbernstein[m, j] = D[philbernstein[m, j], xi], {j, 1, 
+     m + 1}];
+   
+   (* 1D \[Rule] 2D *)
+   (* Number of shape functions in 1D = m+1, in 2D = (m+1)^2 *)
+   Table[phiqxbernstein[i] = (philbernstein[m, i] /. xi -> xi1), {i, 
+     1, m + 1}];
+   Table[phiqybernstein[i] = (philbernstein[m, i] /. xi -> xi2), {i, 
+     1, m + 1}];
+   
+   (* calculate shape functions *)
+   k = 1;
+   Table[phiqbernstein [m, k] = (phiqxbernstein[i]*phiqybernstein[j]);
+     k++;, {j, 1, m + 1}, {i, 1, m + 1}];
+   Table[phiqgradbernstein[m, i] = 
+      Grad[phiqbernstein[m, i], {xi1, xi2}];, {i, 1, (m + 1)^2}];
+   
+   Table[Print["philbernsteinuc[", m, ",", k, "][xi_]:=", 
+     philbernstein[m, k], ";"], {k, 1, (m + 1)}];
+   Table[Print["philbernsteingraduc[", m, ",", k, "][xi_]:=", 
+     philgradbernstein[m, k], ";"], {k, 1, (m + 1)}];
+   Table[Print["phiqbernsteinuc[", m, ",", k, "][xi1_,xi2_]:=", 
+     phiqbernstein[m, k], ";"], {k, 1, (m + 1)^2}];
+   Table[Print["phiqbernsteingraduc[", m, ",", k, "][xi1_,xi2_]:=", 
+     phiqgradbernstein[m, k], ";"], {k, 1, (m + 1)^2}];
+   ];
+(* -------------------------------------------------------------------------------------\
+ *)
+
+(* -------------------------------------------------------------------------------------\
+ *)
+(* Compiled: calculates all 1D and 2D shape functions and their \
+derivatives for all indices for a given order m as copy-paste ready \
+function *)
+calcphiBernsteinCOMP[m_] :=
+  Block[{k, philbernstein, philgradbernstein, phiqxbernstein, 
+    phiqybernstein, xi, xi1, xi2, phiqbernstein, phiqgradbernstein},
+   
+   Table[philbernstein[m, i] = bernstein[m, i, xi], {i, 1, m + 1}];
+   Table[philgradbernstein[m, j] = D[philbernstein[m, j], xi], {j, 1, 
+     m + 1}];
+   
+   (* 1D \[Rule] 2D *)
+   (* Number of shape functions in 1D = m+1, in 2D = (m+1)^2 *)
+   Table[phiqxbernstein[i] = (philbernstein[m, i] /. xi -> xi1), {i, 
+     1, m + 1}];
+   Table[phiqybernstein[i] = (philbernstein[m, i] /. xi -> xi2), {i, 
+     1, m + 1}];
+   
+   (* calculate shape functions *)
+   k = 1;
+   Table[phiqbernstein [m, k] = (phiqxbernstein[i]*phiqybernstein[j]);
+     k++;, {j, 1, m + 1}, {i, 1, m + 1}];
+   Table[phiqgradbernstein[m, i] = 
+      Grad[phiqbernstein[m, i], {xi1, xi2}];, {i, 1, (m + 1)^2}];
+   
+   Table[Print["philbernstein[", m, ",", k, 
+     "]=Compile[{xi},Evaluate[N[", philbernstein[m, k], 
+     ",MachinePrecision]],\"RuntimeOptions\"\[Rule]{\"\
+EvaluateSymbolically\"\[Rule]False}];"], {k, 1, (m + 1)}];
+   Table[Print["philbernsteingrad[", m, ",", k, 
+     "]=Compile[{xi},Evaluate[N[", philgradbernstein[m, k], 
+     ",MachinePrecision]],\"RuntimeOptions\"\[Rule]{\"\
+EvaluateSymbolically\"\[Rule]False}];"], {k, 1, (m + 1)}];
+   Table[Print["phiqbernstein[", m, ",", k, 
+     "]=Compile[{xi1,xi2},Evaluate[N[", phiqbernstein[m, k], 
+     ",MachinePrecision]],\"RuntimeOptions\"\[Rule]{\"\
+EvaluateSymbolically\"\[Rule]False}];"], {k, 1, (m + 1)^2}];
+   Table[Print["phiqbernsteingrad[", m, ",", k, 
+     "]=Compile[{xi1,xi2},Evaluate[N[", phiqgradbernstein[m, k], 
+     ",MachinePrecision]],\"RuntimeOptions\"\[Rule]{\"\
+EvaluateSymbolically\"\[Rule]False}];"], {k, 1, (m + 1)^2}];
+   ];
+(* -------------------------------------------------------------------------------------\
+ *)
+(* =====================================================================================\
+ *)
